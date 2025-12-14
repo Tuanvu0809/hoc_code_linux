@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "strutils.h"
+#include "../inc/strutils.h"
 #include <stdlib.h>
 #include <string.h>
 

@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "strutils.h"
+#include "../inc/strutils.h"
 #include <string.h>
 /*Fuction creat*/
 int get_command_argument(int argc, char *argv[], char *buffer, int buffer_size);
