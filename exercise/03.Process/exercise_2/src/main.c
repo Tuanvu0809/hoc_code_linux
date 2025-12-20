@@ -12,13 +12,12 @@ int main(int argc, char *argv[])
     printf("Exercise 2||\n");
     char string[50];
     
-    pid_t pid = fork();
-
-    if(!get_command_argument(argc,argv, string,sizeof(string)))
+    if(get_command_argument(argc,argv, string,sizeof(string)) == 0)
     {
-        printf("fail \n");
         return -1;
     }
+
+    pid_t pid = fork();
 
     setenv("MY_COMMAND",argv[1],1);
 
@@ -55,7 +54,7 @@ int main(int argc, char *argv[])
 
 int get_command_argument(int argc, char *argv[], char *buffer, int buffer_size) {
     
-    if (argc < 2) {
+    if (argc == 1) {
         printf("Enter string !\n");
         return 0;
     }
@@ -74,5 +73,5 @@ int get_command_argument(int argc, char *argv[], char *buffer, int buffer_size) 
         }
     }
 
-    return 1;
+    return -1;
 }
