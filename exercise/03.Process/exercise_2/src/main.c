@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <wait.h>
+
 int get_command_argument(int argc, char *argv[], char *buffer, int buffer_size);
 
 
@@ -36,8 +37,7 @@ int main(int argc, char *argv[])
             printf("MY_COMMAND not set\n");
             exit(1);
         }
-        execlp(cmd, cmd, NULL);
-
+         execvp(cmd, &argv[1]);
         perror("execlp failed");
         exit(1);
     }

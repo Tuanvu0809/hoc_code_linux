@@ -1,10 +1,9 @@
-PARENT = src/parent.c 
-CHILD = src/child.c
+SRC = src/main.c 
 TARGET = process_exec
 
 
 all : $(SRC)
-	gcc -o $(TARGET) $(PARENT)
+	gcc -o $(TARGET) $(SRC)
 
 clean: 
 	rm -rf $(TARGET)
