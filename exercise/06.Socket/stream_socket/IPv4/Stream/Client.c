@@ -25,7 +25,7 @@ int main() {
     server_addr.sin_port = htons(PORT_CONNECT); // Host TO Network Short (16-bit, for port numbers)
     
     // Convert IP address, check IP address is valid or not
-    if (inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr) <= 0) {
+    if (inet_pton(AF_INET,  "192.168.2.134", &server_addr.sin_addr) <= 0) {
         perror("Invalid address");
         close(client_fd);
         return 1;
