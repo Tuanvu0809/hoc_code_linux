@@ -4,9 +4,11 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include "../include/basic_infomation.h"
+#include "../include/communicate.h"
 char ip_address[IP_BUFFER_SIZE];
+extern info_socket_self self;
 
-static char *Get_Local_IP(void)
+char *Get_Local_IP(void)
 {
     struct ifaddrs *ifaddr, *ifa;
 
@@ -56,23 +58,48 @@ void Help_display_fuction()
 }
 void Display_ip_fuction()
 {
-    printf("========= IP address display============== \n");
-    char *ip_address;
-    ip_address = Get_Local_IP();
-    if (ip_address)
-        printf("Local IP: %s\n", ip_address);
+//     printf("========= IP address display============== \n");
+ 
+//     if (ip_address)
+//         printf("Local IP: %s\n", inet_ntoa(self.address.sin_addr));
+//     else
+//         printf("Cannot get IP\n");
+//     printf("======================================= \n");
+
+   char ip_str[INET_ADDRSTRLEN];
+
+    printf("========= IP address display ==============\n");
+
+    if (self.address.sin_addr.s_addr != 0)
+    {
+        if (inet_ntop(AF_INET,
+                      &self.address.sin_addr,
+                      ip_str,
+                      sizeof(ip_str)) != NULL)
+        {
+            printf("Local IP: %s\n", ip_str);
+        }
+        else
+        {
+            perror("inet_ntop failed");
+        }
+    }
     else
-        printf("Cannot get IP\n");
+    {
+        printf("IP address not set\n");
+    }
+
+    printf("===========================================\n");
+ }
+
+void Display_port_fuction()
+{
+    printf("=========Port display============== \n");
+  
+    if (ip_address)
+        printf("PORT : %d\n", htons(self.address.sin_port));
+    else
+        printf("Cannot get PORT \n");
     printf("======================================= \n");
 }
 
-void Exit_fuction()
-{
-    pid_t pid;
-    pid = getpid();
-    printf("======================================= \n");
-    printf("Exit program \n");
-    printf("======================================= \n");
-    kill(pid,SIGUSR1);
-  //  exit(0);
-}

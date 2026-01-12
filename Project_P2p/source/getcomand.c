@@ -5,6 +5,8 @@
 
 // extern int g_client_fd = -1;
 
+extern info_socket_self self;
+
 int get_command_argument(int argc, char *argv[], char *buffer, int buffer_size) {
     
     if (argc < 2) {
@@ -60,7 +62,11 @@ static command_t Get_Command_ID(const char *cmd)
         return CMD_CONNECT;
     if(strcmp(cmd,"list") == 0)
         return CMD_LIST;
-
+    if(strcmp(cmd,"send") == 0)
+        return CMD_SEND;
+    if(strcmp(cmd,"myport") == 0)
+        return CMD_PORT;
+   
     return CMD_UNKNOWN;
 }
 
@@ -104,8 +110,37 @@ static void connect_tcp(char *ip , char *Port_string)
     }
     uint16_t Port_connect = atoi(Port_string);
 
-    Tcp_stream_client(ip,Port_connect);
+   Tcp_stream_client(ip,Port_connect);
 }
+static void send_message(char *index_string, char *message)
+{
+
+      if(is_number(index_string) == 0)
+    {
+        fprintf(stderr,"Format wrong!!\n");
+        return ;
+    }
+    int index = atoi(index_string);
+    // char *message;
+    // message = getcommand();
+
+   // Tcp_stream_client(ip,Port_connect);
+   //Tcp_send_message(index,message);
+
+}
+
+void Exit_fuction()
+{
+    // pid_t pid;
+    // pid = getpid();
+    printf("======================================= \n");
+    printf("Exit program \n");
+    printf("======================================= \n");
+   // Tcp_stream_disconnect();
+   // kill(pid,SIGUSR1);
+  //  exit(0);
+}
+
 void Check_Command(uint16_t Port , char *buffer, command_t *choice )
 {
     char cmd[MAX_PARAMETER][MAX_SIZE];
@@ -126,7 +161,7 @@ void Check_Command(uint16_t Port , char *buffer, command_t *choice )
             Help_display_fuction();
             break;
         case CMD_EXIT:
-           // Tcp_stream_disconnect();
+            Tcp_stream_disconnect();
             Exit_fuction();
             break;
         case CMD_DISPLAY_IP:
@@ -135,9 +170,15 @@ void Check_Command(uint16_t Port , char *buffer, command_t *choice )
         case CMD_CONNECT:
             connect_tcp(cmd[1],cmd[2]);  
             break;
-        // case CMD_LIST:
-        //     List_all_connect();
-        //     break;
+        case CMD_LIST:
+            List_all_connect();
+            break;
+        case CMD_PORT:
+            Display_port_fuction();
+            break;
+        case CMD_SEND:
+            send_message(cmd[1],cmd[2]);
+            break;
         default:
             printf("Unknown command: %s\n", buffer);
             break;

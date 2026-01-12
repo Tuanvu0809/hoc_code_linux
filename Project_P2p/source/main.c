@@ -5,16 +5,32 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <sys/select.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <poll.h>
 #include "../include/getcomand.h"
 #include "../include/basic_infomation.h"
 
 // command_t User_choice = CMD_START;
 command_t User_choice = CMD_HELP; 
 uint16_t Port; 
-//bool Flag_check_blind = false;
+
+info_socket_self self;
+info_socket_client *connect_socket;
+
+int number_connection  = 0 ;
+
+// void sig_exit(int signo)
+// {
+//     server_running = 0;
+// }
+
 
 void *Client_mission(void *index);
 void *Serve_mission(void *index);
+// void Info_self_socket(char *PORT_cmd );
 
 int main(int argc, char *argv[])
 {
@@ -31,12 +47,28 @@ int main(int argc, char *argv[])
         fprintf(stderr,"Format wrong!!\n");
         return -1;
     }
-    Port = atoi(PORT_cmd);
 
-    signal(SIGUSR1,Tcp_stream_disconnect);    
-   
+    // Info_self_socket( PORT_cmd );
+    // malloc_socket();
+    // if(Tcp_init() != 0)
+    // {
+    //     fprintf(stderr,"Format init tcp!!\n");
+    //     return -1;
+    // }
+
+    self.address.sin_addr.s_addr = inet_addr(Get_Local_IP());
+    self.address.sin_port = htons(atoi(PORT_cmd));
+
+    self.status_client = -1 ; 
+    self.status_serve = -1 ; 
+
+    printf(" self socket %s %d %s %s",inet_ntoa(self.address.sin_addr),htons(self.address.sin_port),self.status_client != -1 ? "yes": "no",self.status_serve != -1 ? "yes": "no");
+    printf("\n sizeof socket %ld\n",sizeof(self));
+
+    // signal(SIGUSR1,Tcp_stream_disconnect);   
+    fflush(stdin);
+  
     Help_display_fuction();
-
 
     pthread_t Serve, Client;
 
@@ -50,17 +82,30 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+// void Info_self_socket(char *PORT_cmd )
+// {
+//     strcpy(self.IP_address, Get_Local_IP());
+//     self.Port = atoi(PORT_cmd);
+//     self.status_client = -1 ; 
+//     self.status_serve = -1 ; 
+//     memset(&self.address, 0, sizeof(self.address));
+//     self.address.sin_family = AF_INET;
+//     self.address.sin_port = htons(self.Port);
+//     self.address.sin_addr.s_addr = INADDR_ANY;
+    
 
+//}
 void *Client_mission(void *index)
 {
 
     uint16_t Port = *(uint16_t *) index;
     
-   sleep(1);
-    signal(SIGUSR1,Tcp_stream_disconnect);
+   
+ //   signal(SIGUSR1,Tcp_stream_disconnect);
     
     while(User_choice != CMD_EXIT)
     {
+        sleep(1);
         printf("Enter the command: ");
         char *command;
         command = getcommand();
@@ -77,8 +122,9 @@ void *Serve_mission(void *index)
 //     int server_fd , client_fd;
     while(User_choice != CMD_EXIT)
     {
-   
-            Tcp_stream_server(Port);
+    //sleep(1);
+    
+      Tcp_stream_server();
         
         // close(client_fd);
         // close(server_fd);
@@ -87,5 +133,3 @@ void *Serve_mission(void *index)
     printf("Thread serve end\n ");
     return NULL;
 }
-
-

@@ -15,8 +15,11 @@ typedef enum{
     CMD_HELP ,
     CMD_EXIT,
     CMD_DISPLAY_IP,
+    CMD_PORT,
     CMD_CONNECT,
     CMD_LIST,
+    CMD_SEND,
+    CMD_READ,
     CMD_UNKNOWN,
 
 }command_t; 
