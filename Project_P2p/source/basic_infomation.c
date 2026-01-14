@@ -58,45 +58,20 @@ void Help_display_fuction()
 }
 void Display_ip_fuction()
 {
-//     printf("========= IP address display============== \n");
+    printf("========= IP address display============== \n");
  
-//     if (ip_address)
-//         printf("Local IP: %s\n", inet_ntoa(self.address.sin_addr));
-//     else
-//         printf("Cannot get IP\n");
-//     printf("======================================= \n");
 
-   char ip_str[INET_ADDRSTRLEN];
+    printf("Local IP: %s\n", Get_Local_IP());
 
-    printf("========= IP address display ==============\n");
+    printf("======================================= \n");
 
-    if (self.address.sin_addr.s_addr != 0)
-    {
-        if (inet_ntop(AF_INET,
-                      &self.address.sin_addr,
-                      ip_str,
-                      sizeof(ip_str)) != NULL)
-        {
-            printf("Local IP: %s\n", ip_str);
-        }
-        else
-        {
-            perror("inet_ntop failed");
-        }
-    }
-    else
-    {
-        printf("IP address not set\n");
-    }
-
-    printf("===========================================\n");
- }
+}
 
 void Display_port_fuction()
 {
     printf("=========Port display============== \n");
   
-    if (ip_address)
+    if (htons(self.address.sin_port))
         printf("PORT : %d\n", htons(self.address.sin_port));
     else
         printf("Cannot get PORT \n");

@@ -7,7 +7,7 @@
 #include <stdlib.h>
 
 #define BUFFER_SIZE 100
-#define MAX_PARAMETER   4
+#define MAX_PARAMETER   10
 #define MAX_SIZE     50
 
 typedef enum{

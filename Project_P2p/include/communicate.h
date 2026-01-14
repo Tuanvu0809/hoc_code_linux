@@ -27,9 +27,9 @@ typedef struct{
 
 typedef struct{
     struct sockaddr_in address;
-    int status_client;
+    int status;
   
-}   info_socket_client;
+}   info_socket_connect;
 
 // int tcp_connect(const char *ip, uint16_t Port_serve);
 // void Tcp_connect_fuction(const char *ip, const char *Port_serve);
@@ -42,7 +42,7 @@ void Tcp_stream_disconnect();
 
 void List_all_connect();
 
-// int malloc_socket();
+int malloc_socket();
 // void recv_client_data(int index);
 // void accept_new_client(void);
 

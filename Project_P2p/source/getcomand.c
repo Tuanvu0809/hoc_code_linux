@@ -2,7 +2,7 @@
 #include "../include/getcomand.h"
 #include <sys/wait.h>
 #include <signal.h>
-
+#include "../include/basic_infomation.h"
 // extern int g_client_fd = -1;
 
 extern info_socket_self self;
@@ -109,10 +109,16 @@ static void connect_tcp(char *ip , char *Port_string)
         return ;
     }
     uint16_t Port_connect = atoi(Port_string);
+ 
+    if (ip != NULL && strcmp(ip, Get_Local_IP()) == 0 && Port_connect == ntohs(self.address.sin_port))
+    {
+        printf("self connect\n");
+        return;
+    }
 
-   Tcp_stream_client(ip,Port_connect);
+    Tcp_stream_client(ip,Port_connect);
 }
-static void send_message(char *index_string, char *message)
+static void send_message(char *index_string, char message[][50], int number)
 {
 
       if(is_number(index_string) == 0)
@@ -121,11 +127,11 @@ static void send_message(char *index_string, char *message)
         return ;
     }
     int index = atoi(index_string);
-    // char *message;
-    // message = getcommand();
 
-   // Tcp_stream_client(ip,Port_connect);
-   //Tcp_send_message(index,message);
+    for(int i = 2 ; i< number ;i++)
+    {
+        printf("%s\n", message[i]);
+    }
 
 }
 
@@ -153,6 +159,12 @@ void Check_Command(uint16_t Port , char *buffer, command_t *choice )
     cmd_id = Get_Command_ID(cmd[0]);
 
     *choice = cmd_id;
+
+    if(n > MAX_PARAMETER)
+    {
+        printf(" too much length\n");
+        return;
+    }
  
    
     switch (cmd_id)
@@ -177,7 +189,7 @@ void Check_Command(uint16_t Port , char *buffer, command_t *choice )
             Display_port_fuction();
             break;
         case CMD_SEND:
-            send_message(cmd[1],cmd[2]);
+            send_message(cmd[1],cmd,n);
             break;
         default:
             printf("Unknown command: %s\n", buffer);

@@ -18,9 +18,8 @@ command_t User_choice = CMD_HELP;
 uint16_t Port; 
 
 info_socket_self self;
-info_socket_client *connect_socket;
+info_socket_connect *connect_socket;
 
-int number_connection  = 0 ;
 
 // void sig_exit(int signo)
 // {
@@ -49,12 +48,11 @@ int main(int argc, char *argv[])
     }
 
     // Info_self_socket( PORT_cmd );
-    // malloc_socket();
-    // if(Tcp_init() != 0)
-    // {
-    //     fprintf(stderr,"Format init tcp!!\n");
-    //     return -1;
-    // }
+    if(malloc_socket() != 0)
+    {
+        printf("socket error\n");
+        return -1;
+    }
 
     self.address.sin_addr.s_addr = inet_addr(Get_Local_IP());
     self.address.sin_port = htons(atoi(PORT_cmd));
