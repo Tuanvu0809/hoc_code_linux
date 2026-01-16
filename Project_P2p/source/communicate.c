@@ -65,15 +65,11 @@ void poll_read_clients(info_socket_connect *clients, int *num_client)
 int Serve_creat(uint16_t PORT_CONNECT)
 {
     printf("Serve Stream \n") ; 
-    //  int server_fd ; 
 
-    // struct sockaddr_in *client_address;
     socklen_t connect_size = sizeof(struct sockaddr_in); 
     info_socket_connect *connect_other;
     
     char buffer[BUFFER_SIZE];
-
-
     connect_other = (info_socket_connect *)malloc(sizeof(info_socket_connect));
 
     connect_other->status = -1;
@@ -131,9 +127,7 @@ int Serve_creat(uint16_t PORT_CONNECT)
         connect_socket[number_connection] = *connect_other;
         number_connection ++;
 
-   
-
-
+  
         // 5. read() - Receive data from client
         memset(buffer, 0, BUFFER_SIZE);
         int bytes_read = read(connect_other->status, buffer, BUFFER_SIZE);
@@ -213,8 +207,7 @@ int Client_creat(uint16_t PORT_CONNECT , char *ip)
     if (write(self.status_client, message, strlen(message)) < 0) {
         perror("write failed");
     }
-    //sendto(self.status_client,"hello i vu le \n",sizeof("hello i vu le \n"),0,(struct sockaddr*) &connect_socket[0].address,sizeof(sizeof(connect_socket[0].address)));
-
+ 
     // // 5. read() - Receive data
     // int bytes_read = read(self.status_client, buffer, BUFFER_SIZE - 1);
     // if (bytes_read > 0) {
@@ -282,12 +275,6 @@ void Tcp_stream_server()
     }
 
     close(self.status_serve);
-
-    // char ip[INET_ADDRSTRLEN];
-
-    // inet_ntop(AF_INET,  &connect_socket[number_connection].address.sin_addr,  ip,  INET_ADDRSTRLEN);
-    // fprintf(stdout,"Accept new client from %s set up at Port %d\n", ip, ntohs(connect_socket[number_connection].address.sin_port));
-    
     /*wait any mess in connect */
     poll_read_clients(connect_socket,&number_connection);
 }
