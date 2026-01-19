@@ -24,31 +24,34 @@ int number_connection  = 0 ;
 
 void *Client_mission(void *index);
 void *Serve_mission(void *index);
+int Check_condition(char *Port_cmd);
 
 int main(int argc, char *argv[])
 {
     printf("APP P2P\n");
     char PORT_cmd[100];
+    
     if(get_command_argument(argc,argv,PORT_cmd,BUFFER_SIZE) == 0)
     {
         fprintf(stderr,"Format wrong!!\n");
-        return -1;
+        return FAIL;
 
     }
-    if(is_number(PORT_cmd) == 0)
+
+    if(Check_condition(PORT_cmd) != 0)
     {
-        fprintf(stderr,"Format wrong!! \n");
-        return -1;
+        fprintf(stderr,"PORT wrong!! \n");
+        return FAIL;
     }
 
     if(malloc_socket() != 0)
     {
-        printf("socket error\n");
-        return -1;
+        fprintf(stderr,"socket error\n");
+        return FAIL;
     }
 
     self.address.sin_addr.s_addr = inet_addr(Get_Local_IP());
-    self.address.sin_port = htons(atoi(PORT_cmd));
+    self.address.sin_port = htons(Port);
 
 
     self.status_serve = -1 ; 
@@ -68,7 +71,7 @@ int main(int argc, char *argv[])
     pthread_join(Serve,NULL);
     pthread_join(Client,NULL);
 
-    return 0;
+    return SUCCESS;
 }
 void *Client_mission(void *index)
 {
@@ -81,6 +84,7 @@ void *Client_mission(void *index)
     {
         sleep(1);
         printf("Enter the command: ");
+        fflush(stdin);
         char *command;
         command = getcommand();
         Check_Command(Port,command,&User_choice);
@@ -89,6 +93,25 @@ void *Client_mission(void *index)
 
     
     return NULL;
+}
+int Check_condition(char *PORT_cmd)
+{
+   
+    if(is_number(PORT_cmd) == 0)
+    {
+        fprintf(stderr,"Format wrong!! \n");
+        return FAIL;
+    }
+
+    Port = atoi(PORT_cmd);
+
+    if(Check_Port_Permission(Port) != 0)
+    {
+        fprintf(stderr,"Port can't access\n");
+        return FAIL;
+    }
+
+    return SUCCESS;
 }
 
 void *Serve_mission(void *index)

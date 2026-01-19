@@ -14,7 +14,7 @@ int Check_socket_connect(char *ip , uint16_t Port)
     if (ip != NULL && strcmp(ip, Get_Local_IP()) == 0 && Port== ntohs(self.address.sin_port))
     {
         fprintf(stderr,"self connect\n");
-        return -1 ;
+         return FAIL; ;
     }
 
     for( int index = 0; index< number_connection ;index++ )
@@ -22,27 +22,27 @@ int Check_socket_connect(char *ip , uint16_t Port)
         if ( strcmp(ip, Get_Local_IP()) == 0 && Port== ntohs(connect_socket[index].address.sin_port))
         {
             fprintf(stderr,"already connect\n");
-            return -1; 
+            return FAIL; 
             
         }
 
      
     }
 
-    return 0;
+    return SUCCESS;
 }
 
 int get_command_argument(int argc, char *argv[], char *buffer, int buffer_size) {
     
     if (argc < 2) {
         printf("Enter string !\n");
-        return 0;
+        return SUCCESS;
     }
 
     if(argc>2)
     {
         printf("Invalid paramater\n");
-        return 0;
+        return SUCCESS;
     }
    
     buffer[0] = '\0'; 
@@ -50,7 +50,7 @@ int get_command_argument(int argc, char *argv[], char *buffer, int buffer_size) 
     for (int i = 1; i < argc; i++) {
         if (strlen(buffer) + strlen(argv[i]) + 2 >= buffer_size) {
             printf("long string \n");
-            return 0;
+            return SUCCESS;
         }
 
         strcat(buffer, argv[i]);
@@ -64,15 +64,20 @@ int get_command_argument(int argc, char *argv[], char *buffer, int buffer_size) 
 
 int is_number(const char *str)
 {
-    if (*str == '\0') return 0; 
+    if (*str == '\0') return SUCCESS; 
 
     while (*str)
     {
         if (!isdigit(*str))
-            return 0;
+            return SUCCESS;
         str++;
     }
     return 1;
+}
+int Check_Port_Permission(uint16_t Port)
+{
+    fprintf(stderr,"Port can accept from %d to %d\n",PORT_MIN,PORT_MAX);
+   return (Port > PORT_MIN && Port < PORT_MAX) ? 0 : 1;
 }
 
 static command_t Get_Command_ID(const char *cmd)
@@ -97,10 +102,10 @@ static command_t Get_Command_ID(const char *cmd)
 }
 static int Split_String(char *input, char output[][50], int max_token)
 {
-    if (input == NULL) return 0;
+    if (input == NULL) return SUCCESS;
 
     char *check_string = malloc(strlen(input) + 1);
-    if (!check_string) return 0;
+    if (!check_string) return SUCCESS;
 
     strcpy(check_string, input);
 
@@ -122,9 +127,10 @@ static int Split_String(char *input, char output[][50], int max_token)
 
 char *getcommand()
 { 
+
     char *buffer = (char *) malloc(sizeof(char) * BUFFER_SIZE );
     fflush(stdout);
-
+    fflush(stdin);
     fgets(buffer, BUFFER_SIZE, stdin);
     buffer[strcspn(buffer, "\n")] = '\0'; 
 
@@ -133,7 +139,6 @@ char *getcommand()
 
 static void connect_tcp(char *ip , char *Port_string)
 {
-    printf("%s  %s\n",ip,Port_string);
     
     if(is_number(Port_string) == 0)
     {
@@ -188,10 +193,12 @@ void Check_Command(uint16_t Port , char *buffer, command_t *choice )
     char cmd[MAX_PARAMETER][MAX_SIZE];
     //char *buffer = (char *) malloc(sizeof(char) * BUFFER_SIZE );
     command_t cmd_id;
-    printf("%s ",buffer);
-   
+
+    memset(cmd,0,sizeof(cmd));
+    
     //buffer = getcommand();
   
+
     int n = Split_String(buffer,cmd,MAX_PARAMETER);
     
     if(n > MAX_PARAMETER)
@@ -202,10 +209,7 @@ void Check_Command(uint16_t Port , char *buffer, command_t *choice )
 
     cmd_id = Get_Command_ID(cmd[0]);
 
-    printf("%s %s\n",cmd[1],cmd[2]);
-
     *choice = cmd_id;
-
        
     switch (cmd_id)
     {
@@ -235,6 +239,6 @@ void Check_Command(uint16_t Port , char *buffer, command_t *choice )
             break;
     }
 
-    free(buffer);
+   // free(buffer);
 
 }

@@ -9,6 +9,13 @@
 
 #define MAX_PARAMETER   10
 #define MAX_SIZE     50
+#define PORT_MIN    1024
+#define PORT_MAX    49152
+
+typedef enum{
+    FAIL = -1,
+    SUCCESS = 0,
+} Status;
 
 typedef enum{
     CMD_START = 0,
@@ -27,6 +34,7 @@ typedef enum{
 int get_command_argument(int argc, char *argv[], char *buffer, int buffer_size) ;
 void Check_Command(uint16_t Port , char *buffer, command_t *choice );
 int is_number(const char *str);
+int Check_Port_Permission(uint16_t Port);
 char *getcommand();
 
 #endif

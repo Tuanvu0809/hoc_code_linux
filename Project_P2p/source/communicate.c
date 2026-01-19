@@ -76,7 +76,7 @@ int Serve_creat(uint16_t PORT_CONNECT)
 
     if (!connect_other) {
         perror("malloc failed");
-        return -1;
+         return FAIL;;
     }
     /*Serve */
     //Creat socket
@@ -127,13 +127,15 @@ int Serve_creat(uint16_t PORT_CONNECT)
         connect_socket[number_connection] = *connect_other;
         number_connection ++;
 
+        // close(connect_socket[number_connection].status);
+        // number_connection ++;
   
         // 5. read() - Receive data from client
-        memset(buffer, 0, BUFFER_SIZE);
-        int bytes_read = read(connect_other->status, buffer, BUFFER_SIZE);
-        if (bytes_read > 0) {
-            printf(" Received from : %s\n", buffer);
-        }
+       // memset(buffer, 0, BUFFER_SIZE);
+        // int bytes_read = read(connect_other->status, buffer, BUFFER_SIZE);
+        // if (bytes_read > 0) {
+        //     printf(" Received from : %s\n", buffer);
+        // }
 
         //  poll_read_clients(connect_socket,&number_connection);
         
@@ -147,7 +149,8 @@ int Serve_creat(uint16_t PORT_CONNECT)
        
     }
 
-    return 0;
+
+     return SUCCESS;
 }
 
 int Client_creat(uint16_t PORT_CONNECT , char *ip)
@@ -160,7 +163,7 @@ int Client_creat(uint16_t PORT_CONNECT , char *ip)
     connect_other = (info_socket_connect *)malloc(sizeof(info_socket_connect));
     if (!connect_other) {
         perror("malloc failed");
-        return -1;
+         return FAIL;;
     }
 
     // 1. socket() - Create socket
@@ -168,7 +171,7 @@ int Client_creat(uint16_t PORT_CONNECT , char *ip)
     if (self.status_client < 0) {
         perror("socket failed");
         free(connect_other);
-        return -1;
+         return FAIL;;
     }
     printf("[CLIENT] Socket created\n");
 
@@ -186,7 +189,7 @@ int Client_creat(uint16_t PORT_CONNECT , char *ip)
         perror("Invalid address");
         close(self.status_client);
         free(connect_other);
-        return -1;
+         return FAIL;;
     }
 
     // 3. connect() - Connect to server
@@ -195,18 +198,19 @@ int Client_creat(uint16_t PORT_CONNECT , char *ip)
         perror("connect failed");
         close(self.status_client);
         free(connect_other);
-        return -1;
+         return FAIL;;
     }
     printf("[CLIENT] Connected to server\n");
     
     connect_other->status = self.status_client;
     connect_socket[number_connection] = *connect_other;
-    number_connection ++;
+    
+ 
     // 4. write() - Send data
-    const char *message = "Hello I'm client!";
-    if (write(self.status_client, message, strlen(message)) < 0) {
-        perror("write failed");
-    }
+    // const char *message = "Hello I'm client!";
+    // if (write(self.status_client, message, strlen(message)) < 0) {
+    //     perror("write failed");
+    // }
  
     // // 5. read() - Receive data
     // int bytes_read = read(self.status_client, buffer, BUFFER_SIZE - 1);
@@ -216,11 +220,14 @@ int Client_creat(uint16_t PORT_CONNECT , char *ip)
     // }
 
     // 6. close() - Close connection
-    //close(self.status_client);
+    // close(self.status_client);
+    // close(connect_other[number_connection].status);
+
+    number_connection ++;
   
     free(connect_other);
 
-    return 0;
+    return SUCCESS;
 }
 void Send_message_to_connect(int index, const char *message)
 {
@@ -273,8 +280,10 @@ void Tcp_stream_server()
         return ;
 
     }
-
+    
+   
     close(self.status_serve);
+    // close(connect_socket[number_connection].status);
     /*wait any mess in connect */
     poll_read_clients(connect_socket,&number_connection);
 }
@@ -289,6 +298,10 @@ void Tcp_stream_client(char *ip , uint16_t PORT)
         return ;
 
     }
+
+        // 6. close() - Close connection
+    //close(self.status_client);
+   // close(connect_socket[number_connection].status);
 
 
     printf("\nConnect success, ready to send data \n");
@@ -312,5 +325,5 @@ void List_all_connect()
 int malloc_socket() {
     connect_socket = malloc(sizeof(info_socket_self) * MAX_CLIENT);
     if (connect_socket == NULL) return 1;
-    return 0;
+     return SUCCESS;
 }
