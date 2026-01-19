@@ -194,6 +194,7 @@ void Check_Command(uint16_t Port , char *buffer, command_t *choice )
     //char *buffer = (char *) malloc(sizeof(char) * BUFFER_SIZE );
     command_t cmd_id;
 
+    
     memset(cmd,0,sizeof(cmd));
     
     //buffer = getcommand();
