@@ -171,7 +171,11 @@ static void send_message(char *index_string, char *message)
     
     printf("message is : %s \n", message);
 
-    Send_message_to_connect(index,message);
+    if(Send_message_to_connect(index,message) != SUCCESS)
+    {
+        fprintf(stderr,"\n send message error\n ");
+        return ;
+    }
       
 
 

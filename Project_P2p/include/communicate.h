@@ -21,6 +21,10 @@
 //     struct sockaddr_in server_socket;
 // } Serve_connect;
 
+#define PORT_FREE 1
+#define PORT_BUSY 0
+#define PORT_ERROR -1
+
 typedef struct{
     struct sockaddr_in address;
     int status_serve;
@@ -41,7 +45,7 @@ void Tcp_stream_server();
 void Tcp_stream_client(char *ip , uint16_t PORT);
 
 void Tcp_stream_disconnect();
-void Send_message_to_connect(int index, const char *message);
+int Send_message_to_connect(int index, const char *message);
 // int Serve_creat();
 
 void List_all_connect();

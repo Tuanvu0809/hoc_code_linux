@@ -13,27 +13,70 @@ extern command_t User_choice ;
 // extern int number_connection;
 extern int number_connection ;
 
-void poll_read_clients(info_socket_connect *clients, int *num_client)
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <errno.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+
+
+
+static int is_port_free(uint16_t Port)
+{
+    int sockfd;
+    struct sockaddr_in addr;
+    int opt = 1;
+
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        perror("socket");
+        return PORT_ERROR;
+    }
+
+    // Cho phép reuse address (tránh TIME_WAIT)
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(Port);
+    addr.sin_addr.s_addr = INADDR_ANY;
+
+    if (bind(sockfd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+        close(sockfd);
+
+        if (errno == EADDRINUSE)
+            return PORT_BUSY;   // Port đang bị chiếm
+        else
+            return PORT_ERROR;  // lỗi khác
+    }
+
+    // bind OK → Port rảnh
+    close(sockfd);
+    return PORT_FREE;
+}
+
+void poll_read_clients(info_socket_connect *clients, int *number_client)
 {
     struct pollfd fds[MAX_CLIENT];
     char buffer[BUFFER_SIZE];
 
     /* 1. Setup pollfd */
-    for (int i = 0; i < *num_client; i++) {
+    for (int i = 0; i < *number_client; i++) {
         fds[i].fd = clients[i].status;
         fds[i].events = POLLIN;
         fds[i].revents = 0;
     }
 
     /* 2. Gọi poll (block vô hạn) */
-    int ready = poll(fds, *num_client, -1);
+    int ready = poll(fds, *number_client, -1);
     if (ready < 0) {
         perror("poll");
         return;
     }
 
     /* 3.Check connect */
-    for (int i = 0; i < *num_client; i++) {
+    for (int i = 0; i < *number_client; i++) {
 
 
         if (fds[i].revents & POLLIN) {
@@ -49,8 +92,8 @@ void poll_read_clients(info_socket_connect *clients, int *num_client)
             //    // close(fds[i].fd);
 
             //     // /* Remove client */
-            //     // clients[i] = clients[*num_client - 1];
-            //     // (*num_client)--;
+            //     // clients[i] = clients[*number_client - 1];
+            //     // (*number_client)--;
 
             //     // i--;  // check lại vị trí này
             // }
@@ -101,7 +144,7 @@ int Serve_creat(uint16_t PORT_CONNECT)
         return 1;
     }
 
-    printf("[SERVER] Bound to port %d\n", PORT_CONNECT);
+    printf("[SERVER] Bound to Port %d\n", PORT_CONNECT);
     //listen 
     if( listen(self.status_serve,DEVICE) < 0)
     {
@@ -121,7 +164,7 @@ int Serve_creat(uint16_t PORT_CONNECT)
             close(self.status_serve);
             return 1;
         }
-        printf("Listening...\n");
+        printf("\nListening...\n");
         /*save connect */
       
         connect_socket[number_connection] = *connect_other;
@@ -220,8 +263,8 @@ int Client_creat(uint16_t PORT_CONNECT , char *ip)
     // }
 
     // 6. close() - Close connection
-    // close(self.status_client);
-    // close(connect_other[number_connection].status);
+    close(self.status_client);
+    close(connect_socket[number_connection].status);
 
     number_connection ++;
   
@@ -229,31 +272,41 @@ int Client_creat(uint16_t PORT_CONNECT , char *ip)
 
     return SUCCESS;
 }
-void Send_message_to_connect(int index, const char *message)
+int Send_message_to_connect(int index, const char *message)
 {
+    self.status_client = socket(AF_INET, SOCK_STREAM, 0);
     if (self.status_client < 0) {
-        fprintf(stderr, "Socket not connected\n");
-        return;
+        perror("socket failed");
+        //free(&connect_socket[index]);
+         return FAIL;
+    }
+    // printf("[CLIENT] Socket created\n");
+
+    // 2. Setup server address
+ //   memset(&connect_socket[index].address, 0, sizeof(struct sockaddr_in));
+    // connect_socket[index].address.sin_family = AF_INET;
+    // //connect_socket[index].address.sin_port = htons(PORT_CONNECT);
+    // connect_socket[index].status = -1;
+
+    // 3. connect() - Connect to server
+    // printf("[CLIENT] Connecting to server...\n");
+    if (connect(self.status_client,  (struct sockaddr *) &connect_socket[index].address,  sizeof(struct sockaddr_in)) < 0) {
+        perror("connect failed");
+        close(self.status_client);
+        //free(connect_other);
+        return FAIL;
     }
 
-    if (message == NULL) {
-        fprintf(stderr, "Message is NULL\n");
-        return;
+    if (write(self.status_client, message, strlen(message)) < 0) {
+        perror("write failed");
+        return FAIL;
     }
 
-    size_t len = strlen(message);
-    size_t sent = 0;
+    close(self.status_client);
+    close(connect_socket[index].status);
+    return SUCCESS;
 
-    while (sent < len) {
-        ssize_t n = write(self.status_client,
-                          message + sent,
-                          len - sent);
-        if (n < 0) {
-            perror("write failed");
-            return;
-        }
-        sent += n;
-    }
+
 }
 
 void Tcp_stream_disconnect()
@@ -274,13 +327,21 @@ void Tcp_stream_disconnect()
 
 void Tcp_stream_server()
 {
+    if(is_port_free(self.address.sin_port) != PORT_FREE )
+    {
+        fprintf(stderr,"Port problem");
+        close(self.status_serve);
+        User_choice = CMD_EXIT;
+        return ;
+    }
     if(Serve_creat(htons(self.address.sin_port)) == 1)
     {
         fprintf(stderr,"connet fail!!\n");
+        close(self.status_serve);
+        User_choice = CMD_EXIT;
         return ;
 
     }
-    
    
     close(self.status_serve);
     // close(connect_socket[number_connection].status);
@@ -288,11 +349,11 @@ void Tcp_stream_server()
     poll_read_clients(connect_socket,&number_connection);
 }
 
-void Tcp_stream_client(char *ip , uint16_t PORT)
+void Tcp_stream_client(char *ip , uint16_t Port)
 {
 
     
-    if(Client_creat(PORT,ip) == 1)
+    if(Client_creat(Port,ip) == 1)
     {
         fprintf(stderr,"connet fail!!\n");
         return ;
@@ -301,7 +362,7 @@ void Tcp_stream_client(char *ip , uint16_t PORT)
 
         // 6. close() - Close connection
     //close(self.status_client);
-   // close(connect_socket[number_connection].status);
+//    close(connect_socket[number_connection].status);
 
 
     printf("\nConnect success, ready to send data \n");
