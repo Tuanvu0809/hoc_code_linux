@@ -4,11 +4,11 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include "../include/basic_infomation.h"
-#include "../include/communicate.h"
-char ip_address[IP_BUFFER_SIZE];
-extern info_socket_self self;
 
-char *Get_Local_IP(void)
+char ip_address[IP_BUFFER_SIZE];
+extern information_self_socket self;
+
+char *get_local_ip(void)
 {
     struct ifaddrs *ifaddr, *ifa;
 
@@ -42,7 +42,7 @@ char *Get_Local_IP(void)
     return ip_address;
 } 
 
-void Help_display_fuction()
+void fuction_display_help()
 {
     printf("=========Help display============== \n");
     printf("Use the command below\n");
@@ -56,21 +56,27 @@ void Help_display_fuction()
     printf("8.exit                               :  close all connection all terminate app\n");
     printf("======================================= \n");
 }
-void Display_ip_fuction()
+void fuction_display_ip()
 {
     printf("========= IP address display============== \n");
- 
+    strcpy(ip_address, get_local_ip());
 
-    printf("Local IP: %s\n", Get_Local_IP());
+    if(ip_address == NULL)
+    {
+        fprintf(stderr,"ip wrong\n");
+        return ;
+    }
+    else{
 
+        printf("Local IP: %s\n", ip_address);
+    }
+  
     printf("======================================= \n");
-
 }
 
-void Display_port_fuction()
+void fuction_display_port()
 {
     printf("=========Port display============== \n");
-  
     if (htons(self.address.sin_port))
         printf("PORT : %d\n", htons(self.address.sin_port));
     else

@@ -12,92 +12,125 @@
 #include <poll.h>
 #include "../include/getcomand.h"
 #include "../include/basic_infomation.h"
-
-// command_t User_choice = CMD_START;
-command_t User_choice = CMD_HELP; 
+/*Variable global*/
+command_t  choice_user = CMD_HELP; 
 uint16_t Port; 
+information_self_socket self;
+information_connect_socket *connect_socket;
+int number_of_connection  = 0 ;
 
-info_socket_self self;
-info_socket_connect *connect_socket;
-
-int number_connection  = 0 ;
-
-void *Client_mission(void *index);
-void *Serve_mission(void *index);
-int Check_condition(char *Port_cmd);
+/*Fuction*/
+void *task_client(void *index);
+void *task_server(void *index);
+int check_condition_port_is_correct(char *Port_cmd);
 
 int main(int argc, char *argv[])
 {
     printf("APP P2P\n");
     char PORT_cmd[100];
-    
-    if(get_command_argument(argc,argv,PORT_cmd,BUFFER_SIZE) == 0)
+    /*Check argument*/
+    if(get_parameter_initial(argc,argv,PORT_cmd,BUFFER_SIZE) != SUCCESS)
     {
         fprintf(stderr,"Format wrong!!\n");
         return FAIL;
 
     }
-
-    if(Check_condition(PORT_cmd) != 0)
+    /* Check port */
+    if(check_condition_port_is_correct(PORT_cmd) != 0)
     {
         fprintf(stderr,"PORT wrong!! \n");
         return FAIL;
     }
-
-    if(malloc_socket() != 0)
+    /**/
+    if(malloc_connect_socket() != 0)
     {
         fprintf(stderr,"socket error\n");
         return FAIL;
     }
 
-    self.address.sin_addr.s_addr = inet_addr(Get_Local_IP());
+    self.address.sin_addr.s_addr = inet_addr(get_local_ip());
     self.address.sin_port = htons(Port);
-
-
     self.status_serve = -1 ; 
 
-    printf(" self socket %s %d %s %s",inet_ntoa(self.address.sin_addr),htons(self.address.sin_port),self.status_client != -1 ? "yes": "no",self.status_serve != -1 ? "yes": "no");
+    printf(" self socket %s %d",inet_ntoa(self.address.sin_addr),htons(self.address.sin_port));
     printf("\n sizeof socket %ld\n",sizeof(self));
 
     fflush(stdin);
   
-    Help_display_fuction();
+    fuction_display_help();
 
-    pthread_t Serve, Client;
+    pthread_t serve, client;
 
-    pthread_create(&Serve,NULL,Serve_mission, &Port);
-    pthread_create(&Client,NULL,Client_mission,&Port);
+    pthread_create(&serve,NULL,task_server, &Port);
+    pthread_create(&client,NULL,task_client,&Port);
 
-    pthread_join(Serve,NULL);
-    pthread_join(Client,NULL);
-
-    return SUCCESS;
-}
-void *Client_mission(void *index)
-{
-
-    uint16_t Port = *(uint16_t *) index;
-    
-   
-    
-    while(User_choice != CMD_EXIT)
+    while( choice_user != CMD_EXIT)
     {
         sleep(1);
-        printf("Enter the command: ");
+        printf("\nEnter the command: ");
         fflush(stdin);
         char *command;
         command = getcommand();
-        Check_Command(Port,command,&User_choice);
+        Check_Command(Port,command,& choice_user);
+       
+    }
+  
+
+    pthread_join(serve,NULL);
+    pthread_join(client,NULL);
+
+    return SUCCESS;
+}
+void *task_client(void *index)
+{
+
+    socklen_t len = sizeof(self.address);
+    
+   
+    while( choice_user != CMD_EXIT)
+    {
+    
+        Tcp_stream_client();
        
     }
 
     
     return NULL;
 }
-int Check_condition(char *PORT_cmd)
+
+void *task_server(void *index)
+{
+    
+    if(is_port_free(self.address.sin_port) != PORT_FREE )
+    {
+        fprintf(stderr,"Port problem");
+        close(self.status_serve);
+         choice_user = CMD_EXIT;
+        return NULL ;
+    }
+    if(Serve_creat(htons(self.address.sin_port)) == 1)
+    {
+        fprintf(stderr,"connet fail!!\n");
+        close(self.status_serve);
+        choice_user = CMD_EXIT;
+        return  NULL;
+
+    }
+
+    while( choice_user != CMD_EXIT)
+    {
+        Tcp_stream_server();
+
+    }
+
+    printf("Thread serve end\n ");
+    return NULL;
+}
+
+int check_condition_port_is_correct(char *PORT_cmd)
 {
    
-    if(is_number(PORT_cmd) == 0)
+    if(is_number(PORT_cmd) != SUCCESS)
     {
         fprintf(stderr,"Format wrong!! \n");
         return FAIL;
@@ -112,17 +145,4 @@ int Check_condition(char *PORT_cmd)
     }
 
     return SUCCESS;
-}
-
-void *Serve_mission(void *index)
-{
-
-    while(User_choice != CMD_EXIT)
-    {
-        Tcp_stream_server();
-
-    }
-
-    printf("Thread serve end\n ");
-    return NULL;
 }

@@ -6,6 +6,14 @@
 #include <stdlib.h>
 #include "basic_infomation.h"
 #include "getcomand.h"
+#include <unistd.h>
+#include <errno.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <stdbool.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <poll.h>
 
 #define BUFFER_SIZE 1024
 #define DEVICE      5
@@ -13,14 +21,6 @@
 #define SOCKETERROR (-1)
 #define MAX_CHARACTER   50
 #define INDEX_MESSAGE_STRING_FOR_SEND_MESSAGE   7
-
-// extern int g_client_fd;
-
-// typedef struct{
-//     uint16_t Port;
-//     struct sockaddr_in server_socket;
-// } Serve_connect;
-
 #define PORT_FREE 1
 #define PORT_BUSY 0
 #define PORT_ERROR -1
@@ -30,28 +30,26 @@ typedef struct{
     int status_serve;
     int status_client;
 
-}  info_socket_self;
+}  information_self_socket;
 
 typedef struct{
     struct sockaddr_in address;
     int status;
+    // int status_serve;
+    // int status_client;
   
-}   info_socket_connect;
+}   information_connect_socket;
 
-// int tcp_connect(const char *ip, uint16_t Port_serve);
-// void Tcp_connect_fuction(const char *ip, const char *Port_serve);
-// int Tcp_init();
-void Tcp_stream_server();
-void Tcp_stream_client(char *ip , uint16_t PORT);
-
-void Tcp_stream_disconnect();
 int Send_message_to_connect(int index, const char *message);
-// int Serve_creat();
+int malloc_connect_socket();
+int is_port_free(uint16_t Port);
+int Serve_creat(uint16_t PORT_CONNECT);
+int Client_creat(uint16_t PORT_CONNECT , char *ip);
 
+void Tcp_stream_server();
+void Tcp_stream_client();
+void Tcp_stream_disconnect();
 void List_all_connect();
 
-int malloc_socket();
-// void recv_client_data(int index);
-// void accept_new_client(void);
 
 #endif

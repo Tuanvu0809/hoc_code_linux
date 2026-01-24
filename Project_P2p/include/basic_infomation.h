@@ -5,13 +5,14 @@
 #include <ifaddrs.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-
+#include "communicate.h"
+/*Marco*/
 #define IP_BUFFER_SIZE 16   
+/*fuction creat*/
+char *get_local_ip(void);
 
-char *Get_Local_IP(void);
-
-void Help_display_fuction();
-void Display_ip_fuction();
-void Display_port_fuction();
-void Exit_fuction();
+void fuction_display_help();
+void fuction_display_ip();
+void fuction_display_port();
+void fuction_exit();
 #endif

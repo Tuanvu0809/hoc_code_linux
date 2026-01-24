@@ -1,28 +1,14 @@
 #include <stdio.h>
-#include <stdbool.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <poll.h>
+#include <fcntl.h>
 #include "../include/communicate.h"
 
-extern info_socket_self self;
-extern info_socket_connect *connect_socket;
-
-extern command_t User_choice ; 
-
-// extern int number_connection;
-extern int number_connection ;
-
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <errno.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
+extern information_self_socket self;
+extern information_connect_socket *connect_socket;
+extern command_t  choice_user ; 
+extern int number_of_connection ;
 
 
-
-static int is_port_free(uint16_t Port)
+int is_port_free(uint16_t Port)
 {
     int sockfd;
     struct sockaddr_in addr;
@@ -34,7 +20,6 @@ static int is_port_free(uint16_t Port)
         return PORT_ERROR;
     }
 
-    // Cho phép reuse address (tránh TIME_WAIT)
     setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
     memset(&addr, 0, sizeof(addr));
@@ -46,63 +31,182 @@ static int is_port_free(uint16_t Port)
         close(sockfd);
 
         if (errno == EADDRINUSE)
-            return PORT_BUSY;   // Port đang bị chiếm
+            return PORT_BUSY;   
         else
-            return PORT_ERROR;  // lỗi khác
+            return PORT_ERROR;  
     }
 
-    // bind OK → Port rảnh
     close(sockfd);
     return PORT_FREE;
 }
 
-void poll_read_clients(info_socket_connect *clients, int *number_client)
+// void poll_read_clients(information_connect_socket *clients, int *number_client)
+// {
+//     struct pollfd fds[MAX_CLIENT];
+//     char buffer[BUFFER_SIZE];
+
+//     for (int i = 0; i < *number_client; i++) {
+//         fds[i].fd = clients[i].status;
+//         fds[i].events = POLLIN;
+//         fds[i].revents = 0;
+//     }
+
+//     int ready = poll(fds, *number_client, -1);
+//     if (ready < 0) {
+//         perror("poll");
+//         return;
+//     }
+
+//     for (int i = 0; i < *number_client; i++) {
+
+
+//         if (fds[i].revents & POLLIN) {
+
+//             int n = read(fds[i].fd, buffer, BUFFER_SIZE - 1);
+
+//             if (n > 0) {
+//                 buffer[n] = '\0';
+//                 printf("Client[%d]: %s\n", i, buffer);
+//             }
+//             else {
+//                 perror("read");
+//             }
+//         }
+//     }
+// }
+
+// void accept_client_nb(int server_fd, information_connect_socket *clients, int *number_client)
+// {
+//     struct sockaddr_in addr;
+//     socklen_t len = sizeof(addr);
+
+//     int fd = accept(server_fd, (struct sockaddr *)&addr, &len);
+//     if (fd < 0) {
+//         if (errno == EAGAIN || errno == EWOULDBLOCK)
+//             return; // chưa có client
+//         perror("accept");
+//         return;
+//     }
+
+//     clients[*number_client].status = fd;
+//     clients[*number_client].address = addr;
+//     (*number_client)++;
+// }
+
+void poll_read_clients_serve(int server_fd, information_connect_socket *clients, int *number_client)
 {
-    struct pollfd fds[MAX_CLIENT];
+    struct pollfd fds[MAX_CLIENT + 1];
     char buffer[BUFFER_SIZE];
 
-    /* 1. Setup pollfd */
+    int nfds = 0;
+
+    /* 1️⃣ server socket */
+    fds[nfds].fd = server_fd;
+    fds[nfds].events = POLLIN;
+    nfds++;
+
+    /* 2️⃣ client sockets */
     for (int i = 0; i < *number_client; i++) {
-        fds[i].fd = clients[i].status;
-        fds[i].events = POLLIN;
-        fds[i].revents = 0;
+        fds[nfds].fd = clients[i].status;
+        fds[nfds].events = POLLIN;
+        nfds++;
     }
 
-    /* 2. Gọi poll (block vô hạn) */
-    int ready = poll(fds, *number_client, -1);
+    int ready = poll(fds, nfds, -1);
     if (ready < 0) {
         perror("poll");
         return;
     }
 
-    /* 3.Check connect */
-    for (int i = 0; i < *number_client; i++) {
-
+      /* 4️⃣ đọc dữ liệu client */
+    for (int i = 1; i < nfds; i++) {
 
         if (fds[i].revents & POLLIN) {
 
-            int n = read(fds[i].fd, buffer, BUFFER_SIZE - 1);
+            int idx = i - 1; // vì fds[0] là server
+            int fd = clients[idx].status;
+            int n = read(fd, buffer, BUFFER_SIZE - 1);
 
             if (n > 0) {
                 buffer[n] = '\0';
-                printf("Client[%d]: %s\n", i, buffer);
-            }
-            // else if (n == 0) {
-            //     printf("Client[%d] disconnected\n", i);
-            //    // close(fds[i].fd);
 
-            //     // /* Remove client */
-            //     // clients[i] = clients[*number_client - 1];
-            //     // (*number_client)--;
-
-            //     // i--;  // check lại vị trí này
-            // }
-            else {
-                perror("read");
+                printf("\n******************************\n");
+                printf(" Message receive from client %s\n" , inet_ntoa(clients[idx].address.sin_addr) );
+                printf("From Port %d\n",htons(clients[idx].address.sin_port));
+                printf("Message: %s\n", buffer);
+                printf("\n******************************\n");
             }
+    
+        }
+    }
+
+    /* 3️⃣ accept client mới */
+    if (fds[0].revents & POLLIN) {
+        struct sockaddr_in addr;
+        socklen_t len = sizeof(addr);
+
+        int client_fd = accept(server_fd, (struct sockaddr *)&addr, &len);
+        
+        if (client_fd >= 0 && *number_client < MAX_CLIENT)
+        {
+            clients[*number_client].status = client_fd;
+            clients[*number_client].address = addr;
+            (*number_client)++;
+
+            printf("\nNew client:ip=%s port=%d\n",inet_ntoa(addr.sin_addr),ntohs(addr.sin_port));
+        }
+    }
+
+  
+}
+
+void poll_read_client(information_connect_socket *clients, int *number_client)
+{
+    struct pollfd fds[MAX_CLIENT];
+    char buffer[BUFFER_SIZE];
+
+    int nfds = 0;
+
+    /* 1️⃣ add all connected sockets */
+    for (int i = 0; i < *number_client; i++) {
+        if (clients[i].status >= 3) {
+            fds[nfds].fd = clients[i].status;
+            fds[nfds].events = POLLIN;
+            nfds++;
+        }
+    }
+
+    if (nfds == 0) {
+        return;
+    }
+
+    int ready = poll(fds, nfds, -1); 
+    if (ready < 0) {
+        perror("poll");
+        return;
+    }
+    
+    for (int i = 0; i < nfds; i++) {
+
+        if (fds[i].revents & POLLIN) {
+
+            int fd = fds[i].fd;
+            int n = read(fd, buffer, BUFFER_SIZE - 1);
+
+            if (n > 0) {
+                buffer[n] = '\0';
+
+                printf("\n******************************\n");
+                printf("Message receive from serve %s\n" , inet_ntoa(clients[i].address.sin_addr) );
+                printf("From Port %d\n",htons(clients[i].address.sin_port));
+                printf("Message: %s\n", buffer);
+                printf("******************************\n");
+            }
+          
         }
     }
 }
+
 
 
 int Serve_creat(uint16_t PORT_CONNECT)
@@ -110,10 +214,10 @@ int Serve_creat(uint16_t PORT_CONNECT)
     printf("Serve Stream \n") ; 
 
     socklen_t connect_size = sizeof(struct sockaddr_in); 
-    info_socket_connect *connect_other;
+    information_connect_socket *connect_other;
     
     char buffer[BUFFER_SIZE];
-    connect_other = (info_socket_connect *)malloc(sizeof(info_socket_connect));
+    connect_other = (information_connect_socket *)malloc(sizeof(information_connect_socket));
 
     connect_other->status = -1;
 
@@ -126,9 +230,11 @@ int Serve_creat(uint16_t PORT_CONNECT)
     self.status_serve = socket(AF_INET,SOCK_STREAM,0);
     if( self.status_serve < 0)
     {
-        //perror("fail creat serve socket \n");
+        perror("fail creat serve socket \n");
         return 1;
     }
+    
+   // fcntl(self.status, F_SETFL, O_NONBLOCK);
     
     printf("[SERVER] Socket created\n");
     memset(&self.address, 0, sizeof(self.address));
@@ -154,24 +260,24 @@ int Serve_creat(uint16_t PORT_CONNECT)
     }
 
     printf("wait client...\n");
-    while(1)
-    {
-        connect_other->status = accept(self.status_serve,(struct sockaddr*) &connect_other->address,&connect_size);
+    // while(1)
+    // {
+        // connect_other->status = accept(self.status,(struct sockaddr*) &connect_other->address,&connect_size);
 
-        if (connect_other->status < 0) 
-        {
-            perror("accept failed");
-            close(self.status_serve);
-            return 1;
-        }
-        printf("\nListening...\n");
-        /*save connect */
+        // if (connect_other->status < 0) 
+        // {
+        //     perror("accept failed");
+        //     close(self.status);
+        //     return 1;
+        // }
+        // printf("\nListening...\n");
+        // /*save connect */
       
-        connect_socket[number_connection] = *connect_other;
-        number_connection ++;
+        // connect_socket[number_of_connection] = *connect_other;
+        // number_of_connection ++;
 
-        // close(connect_socket[number_connection].status);
-        // number_connection ++;
+        // close(connect_socket[number_of_connection].status);
+        // number_of_connection ++;
   
         // 5. read() - Receive data from client
        // memset(buffer, 0, BUFFER_SIZE);
@@ -180,7 +286,7 @@ int Serve_creat(uint16_t PORT_CONNECT)
         //     printf(" Received from : %s\n", buffer);
         // }
 
-        //  poll_read_clients(connect_socket,&number_connection);
+        //  poll_read_clients(connect_socket,&number_of_connection);
         
         // // 6. write() - Send response to client
         // const char *response = "Hello I'm server!";
@@ -190,7 +296,7 @@ int Serve_creat(uint16_t PORT_CONNECT)
         // 7. close() - Close connections
         //close(connect_other->status);
        
-    }
+   // }
 
 
      return SUCCESS;
@@ -199,15 +305,17 @@ int Serve_creat(uint16_t PORT_CONNECT)
 int Client_creat(uint16_t PORT_CONNECT , char *ip)
 {
 
-    info_socket_connect *connect_other;
+    information_connect_socket *connect_other;
+  
     char buffer[BUFFER_SIZE];
 
     /* malloc sockaddr_in */
-    connect_other = (info_socket_connect *)malloc(sizeof(info_socket_connect));
+    connect_other = (information_connect_socket *)malloc(sizeof(information_connect_socket));
     if (!connect_other) {
         perror("malloc failed");
          return FAIL;;
     }
+      socklen_t len = sizeof(connect_other->address);
 
     // 1. socket() - Create socket
     self.status_client = socket(AF_INET, SOCK_STREAM, 0);
@@ -232,7 +340,7 @@ int Client_creat(uint16_t PORT_CONNECT , char *ip)
         perror("Invalid address");
         close(self.status_client);
         free(connect_other);
-         return FAIL;;
+        return FAIL;;
     }
 
     // 3. connect() - Connect to server
@@ -244,9 +352,20 @@ int Client_creat(uint16_t PORT_CONNECT , char *ip)
          return FAIL;;
     }
     printf("[CLIENT] Connected to server\n");
-    
+
+   // socklen_t len = sizeof(self.address);
+
+    // connect_other->status = accept(self.status,  (struct sockaddr *)&self.address,  &len);
+
+    // if (connect_other->status < 0) {
+    //     perror("accept failed");
+    //     return FAIL;
+    // }
+
+
+   // connect_other->status = accept(connect_other->status,(struct sockaddr *) &self.address,&len);
     connect_other->status = self.status_client;
-    connect_socket[number_connection] = *connect_other;
+    connect_socket[number_of_connection] = *connect_other;
     
  
     // 4. write() - Send data
@@ -263,49 +382,33 @@ int Client_creat(uint16_t PORT_CONNECT , char *ip)
     // }
 
     // 6. close() - Close connection
-    close(self.status_client);
-    close(connect_socket[number_connection].status);
+    // close(self.status_client);
+    // close(connect_socket[number_of_connection].status);
 
-    number_connection ++;
+    number_of_connection ++;
   
     free(connect_other);
 
     return SUCCESS;
 }
+
 int Send_message_to_connect(int index, const char *message)
 {
-    self.status_client = socket(AF_INET, SOCK_STREAM, 0);
-    if (self.status_client < 0) {
-        perror("socket failed");
-        //free(&connect_socket[index]);
-         return FAIL;
-    }
-    // printf("[CLIENT] Socket created\n");
+    ssize_t sent;
+    int fd = connect_socket[index].status;
 
-    // 2. Setup server address
- //   memset(&connect_socket[index].address, 0, sizeof(struct sockaddr_in));
-    // connect_socket[index].address.sin_family = AF_INET;
-    // //connect_socket[index].address.sin_port = htons(PORT_CONNECT);
-    // connect_socket[index].status = -1;
-
-    // 3. connect() - Connect to server
-    // printf("[CLIENT] Connecting to server...\n");
-    if (connect(self.status_client,  (struct sockaddr *) &connect_socket[index].address,  sizeof(struct sockaddr_in)) < 0) {
-        perror("connect failed");
-        close(self.status_client);
-        //free(connect_other);
+    if (fd < 3) {
+        fprintf(stderr, "invalid socket fd=%d\n", fd);
         return FAIL;
     }
 
-    if (write(self.status_client, message, strlen(message)) < 0) {
-        perror("write failed");
+    sent = send(fd, message, strlen(message), 0);
+    if (sent < 0) {
+        perror("send failed");
         return FAIL;
     }
 
-    close(self.status_client);
-    close(connect_socket[index].status);
     return SUCCESS;
-
 
 }
 
@@ -319,7 +422,8 @@ void Tcp_stream_disconnect()
         shutdown(self.status_serve, SHUT_RDWR);
    
     if (connect_socket != NULL){    
-        shutdown(connect_socket->status,SHUT_RDWR);
+        // shutdown(connect_socket->status_client,SHUT_RDWR);
+         shutdown(connect_socket->status,SHUT_RDWR);
         free(connect_socket);
     }    
     
@@ -327,45 +431,14 @@ void Tcp_stream_disconnect()
 
 void Tcp_stream_server()
 {
-    if(is_port_free(self.address.sin_port) != PORT_FREE )
-    {
-        fprintf(stderr,"Port problem");
-        close(self.status_serve);
-        User_choice = CMD_EXIT;
-        return ;
-    }
-    if(Serve_creat(htons(self.address.sin_port)) == 1)
-    {
-        fprintf(stderr,"connet fail!!\n");
-        close(self.status_serve);
-        User_choice = CMD_EXIT;
-        return ;
+    poll_read_clients_serve(self.status_serve,connect_socket,&number_of_connection);
 
-    }
-   
-    close(self.status_serve);
-    // close(connect_socket[number_connection].status);
-    /*wait any mess in connect */
-    poll_read_clients(connect_socket,&number_connection);
 }
 
-void Tcp_stream_client(char *ip , uint16_t Port)
+void Tcp_stream_client()
 {
+    poll_read_client(connect_socket,&number_of_connection);
 
-    
-    if(Client_creat(Port,ip) == 1)
-    {
-        fprintf(stderr,"connet fail!!\n");
-        return ;
-
-    }
-
-        // 6. close() - Close connection
-    //close(self.status_client);
-//    close(connect_socket[number_connection].status);
-
-
-    printf("\nConnect success, ready to send data \n");
 }
 
 
@@ -374,17 +447,17 @@ void List_all_connect()
     printf("--------List all --------\n");
     // printf("serve:    %s   %d %d %s \n",inet_ntoa(self.address.sin_addr),htons(self.address.sin_port),self.status_client,connestatus > 0 ? "connect":"disconnect" );
 
-    for(int i =0 ; i< number_connection ; i++)
+    for(int i =0 ; i< number_of_connection ; i++)
     {
-       printf("%d    %s   %d %d %s \n",i,inet_ntoa(connect_socket[i].address.sin_addr),htons(connect_socket[i].address.sin_port),connect_socket[i].status,connect_socket[i].status > 0 ? "connect":"disconnect" );
+       printf("%d    %s   %d %d \n",i,inet_ntoa(connect_socket[i].address.sin_addr),htons(connect_socket[i].address.sin_port),connect_socket[i].status );
     
     }
     printf("-----------------------\n");
 }
 
 
-int malloc_socket() {
-    connect_socket = malloc(sizeof(info_socket_self) * MAX_CLIENT);
+int malloc_connect_socket() {
+    connect_socket = malloc(sizeof(information_self_socket) * MAX_CLIENT);
     if (connect_socket == NULL) return 1;
      return SUCCESS;
 }

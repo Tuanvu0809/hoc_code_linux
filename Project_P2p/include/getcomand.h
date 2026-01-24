@@ -6,7 +6,6 @@
 #include "communicate.h"
 #include <stdlib.h>
 
-
 #define MAX_PARAMETER   10
 #define MAX_SIZE     50
 #define PORT_MIN    1024
@@ -15,7 +14,7 @@
 typedef enum{
     FAIL = -1,
     SUCCESS = 0,
-} Status;
+} status;
 
 typedef enum{
     CMD_START = 0,
@@ -29,9 +28,9 @@ typedef enum{
     CMD_READ,
     CMD_UNKNOWN,
 
-}command_t; 
+} command_t; 
 
-int get_command_argument(int argc, char *argv[], char *buffer, int buffer_size) ;
+int get_parameter_initial(int argc, char *argv[], char *buffer, int buffer_size) ;
 void Check_Command(uint16_t Port , char *buffer, command_t *choice );
 int is_number(const char *str);
 int Check_Port_Permission(uint16_t Port);
