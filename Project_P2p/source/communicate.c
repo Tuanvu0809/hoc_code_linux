@@ -48,12 +48,11 @@ void poll_read_clients_serve(int server_fd, information_connect_socket *clients,
 
     int nfds = 0;
 
-    /* 1️⃣ server socket */
+
     fds[nfds].fd = server_fd;
     fds[nfds].events = POLLIN;
     nfds++;
 
-    /* 2️⃣ client sockets */
     for (int i = 0; i < *number_client; i++) {
         fds[nfds].fd = clients[i].status;
         fds[nfds].events = POLLIN;
@@ -66,12 +65,12 @@ void poll_read_clients_serve(int server_fd, information_connect_socket *clients,
         return;
     }
 
-      /* 4️⃣ đọc dữ liệu client */
+   
     for (int i = 1; i < nfds; i++) {
 
         if (fds[i].revents & POLLIN) {
 
-            int idx = i - 1; // vì fds[0] là server
+            int idx = i - 1; 
             int fd = clients[idx].status;
             int n = read(fd, buffer, BUFFER_SIZE - 1);
 
@@ -79,7 +78,7 @@ void poll_read_clients_serve(int server_fd, information_connect_socket *clients,
                 buffer[n] = '\0';
 
                 printf("\n******************************\n");
-                printf(" Message receive from client %s\n" , inet_ntoa(clients[idx].address.sin_addr) );
+                printf(" Message receive from  %s\n" , inet_ntoa(clients[idx].address.sin_addr) );
                 printf("From Port %d\n",htons(clients[idx].address.sin_port));
                 printf("Message: %s\n", buffer);
                 printf("\n******************************\n");
@@ -88,7 +87,6 @@ void poll_read_clients_serve(int server_fd, information_connect_socket *clients,
         }
     }
 
-    /* 3️⃣ accept client mới */
     if (fds[0].revents & POLLIN) {
         struct sockaddr_in addr;
         socklen_t len = sizeof(addr);
@@ -115,7 +113,6 @@ void poll_read_client(information_connect_socket *clients, int *number_client)
 
     int nfds = 0;
 
-    /* 1️⃣ add all connected sockets */
     for (int i = 0; i < *number_client; i++) {
         if (clients[i].status >= 3) {
             fds[nfds].fd = clients[i].status;
@@ -145,7 +142,7 @@ void poll_read_client(information_connect_socket *clients, int *number_client)
                 buffer[n] = '\0';
 
                 printf("\n******************************\n");
-                printf("Message receive from serve %s\n" , inet_ntoa(clients[i].address.sin_addr) );
+                printf("Message receive from %s\n" , inet_ntoa(clients[i].address.sin_addr) );
                 printf("From Port %d\n",htons(clients[i].address.sin_port));
                 printf("Message: %s\n", buffer);
                 printf("******************************\n");
@@ -208,45 +205,7 @@ int Serve_creat(uint16_t PORT_CONNECT)
     }
 
     printf("wait client...\n");
-    // while(1)
-    // {
-        // connect_other->status = accept(self.status,(struct sockaddr*) &connect_other->address,&connect_size);
-
-        // if (connect_other->status < 0) 
-        // {
-        //     perror("accept failed");
-        //     close(self.status);
-        //     return 1;
-        // }
-        // printf("\nListening...\n");
-        // /*save connect */
-      
-        // connect_socket[number_of_connection] = *connect_other;
-        // number_of_connection ++;
-
-        // close(connect_socket[number_of_connection].status);
-        // number_of_connection ++;
   
-        // 5. read() - Receive data from client
-       // memset(buffer, 0, BUFFER_SIZE);
-        // int bytes_read = read(connect_other->status, buffer, BUFFER_SIZE);
-        // if (bytes_read > 0) {
-        //     printf(" Received from : %s\n", buffer);
-        // }
-
-        //  poll_read_clients(connect_socket,&number_of_connection);
-        
-        // // 6. write() - Send response to client
-        // const char *response = "Hello I'm server!";
-        // write(connect_other->status, response, strlen(response));
-        // printf("[SERVER] Sent: %s\n", response);
-        
-        // 7. close() - Close connections
-        //close(connect_other->status);
-       
-   // }
-
-
      return SUCCESS;
 }
 
@@ -301,38 +260,9 @@ int Client_creat(uint16_t PORT_CONNECT , char *ip)
     }
     printf("[CLIENT] Connected to server\n");
 
-   // socklen_t len = sizeof(self.address);
-
-    // connect_other->status = accept(self.status,  (struct sockaddr *)&self.address,  &len);
-
-    // if (connect_other->status < 0) {
-    //     perror("accept failed");
-    //     return FAIL;
-    // }
-
-
-   // connect_other->status = accept(connect_other->status,(struct sockaddr *) &self.address,&len);
     connect_other->status = self.status_client;
     connect_socket[number_of_connection] = *connect_other;
     
- 
-    // 4. write() - Send data
-    // const char *message = "Hello I'm client!";
-    // if (write(self.status_client, message, strlen(message)) < 0) {
-    //     perror("write failed");
-    // }
- 
-    // // 5. read() - Receive data
-    // int bytes_read = read(self.status_client, buffer, BUFFER_SIZE - 1);
-    // if (bytes_read > 0) {
-    //     buffer[bytes_read] = '\0';
-    //     printf("[CLIENT] Received: %s\n", buffer);
-    // }
-
-    // 6. close() - Close connection
-    // close(self.status_client);
-    // close(connect_socket[number_of_connection].status);
-
     number_of_connection ++;
   
     free(connect_other);
@@ -370,8 +300,7 @@ void Tcp_stream_disconnect()
         shutdown(self.status_serve, SHUT_RDWR);
    
     if (connect_socket != NULL){    
-        // shutdown(connect_socket->status_client,SHUT_RDWR);
-         shutdown(connect_socket->status,SHUT_RDWR);
+        shutdown(connect_socket->status,SHUT_RDWR);
         free(connect_socket);
     }    
     
@@ -392,15 +321,14 @@ void Tcp_stream_client()
 
 void List_all_connect()
 {
-    printf("--------List all --------\n");
-    // printf("serve:    %s   %d %d %s \n",inet_ntoa(self.address.sin_addr),htons(self.address.sin_port),self.status_client,connestatus > 0 ? "connect":"disconnect" );
-
+    
+    printf("\n*************List*****************\n");
     for(int i =0 ; i< number_of_connection ; i++)
     {
        printf("%d    %s   %d %d \n",i,inet_ntoa(connect_socket[i].address.sin_addr),htons(connect_socket[i].address.sin_port),connect_socket[i].status );
     
     }
-    printf("-----------------------\n");
+    printf("\n******************************\n");
 }
 
 
