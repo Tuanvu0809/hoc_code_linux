@@ -40,58 +40,6 @@ int is_port_free(uint16_t Port)
     return PORT_FREE;
 }
 
-// void poll_read_clients(information_connect_socket *clients, int *number_client)
-// {
-//     struct pollfd fds[MAX_CLIENT];
-//     char buffer[BUFFER_SIZE];
-
-//     for (int i = 0; i < *number_client; i++) {
-//         fds[i].fd = clients[i].status;
-//         fds[i].events = POLLIN;
-//         fds[i].revents = 0;
-//     }
-
-//     int ready = poll(fds, *number_client, -1);
-//     if (ready < 0) {
-//         perror("poll");
-//         return;
-//     }
-
-//     for (int i = 0; i < *number_client; i++) {
-
-
-//         if (fds[i].revents & POLLIN) {
-
-//             int n = read(fds[i].fd, buffer, BUFFER_SIZE - 1);
-
-//             if (n > 0) {
-//                 buffer[n] = '\0';
-//                 printf("Client[%d]: %s\n", i, buffer);
-//             }
-//             else {
-//                 perror("read");
-//             }
-//         }
-//     }
-// }
-
-// void accept_client_nb(int server_fd, information_connect_socket *clients, int *number_client)
-// {
-//     struct sockaddr_in addr;
-//     socklen_t len = sizeof(addr);
-
-//     int fd = accept(server_fd, (struct sockaddr *)&addr, &len);
-//     if (fd < 0) {
-//         if (errno == EAGAIN || errno == EWOULDBLOCK)
-//             return; // chưa có client
-//         perror("accept");
-//         return;
-//     }
-
-//     clients[*number_client].status = fd;
-//     clients[*number_client].address = addr;
-//     (*number_client)++;
-// }
 
 void poll_read_clients_serve(int server_fd, information_connect_socket *clients, int *number_client)
 {
